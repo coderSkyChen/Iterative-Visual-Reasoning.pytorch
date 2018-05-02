@@ -7,7 +7,7 @@ Codes for **Iterative Visual Reasoning Beyond Convolutions**(CVPR2018)，i've re
 - The author [endernewton](https://github.com/endernewton) has published the codes for spatial reasoning, so this codes only contains the baseline model and the spatial reasoning model. Global reasoning with knowledge graph has not been added.
 - I've tried to reimplemente the project strictly according to the author's codes. The `crop_and_resize` function is build on top of the `roi_align` function in [ruotianluo/pytorch-faster-rcnn](https://github.com/ruotianluo/pytorch-faster-rcnn). Also the weight initialization for all the modules is kept the same as the original codes(normal,xavier).
 - The pretrained backbone models come from pytorch pretrained models, using caffe pretrained models may get better results.
-
+- Feel free to contact me if you are encounted with some bugs.
 ## Mainly Depencies
 - Pytorch-0.3
 - Tensorboard(this is optional)
@@ -39,6 +39,8 @@ cd ..
 The default version is compiled with Python 2.7, please compile by yourself if you are using a different python version." If you encounterd any issues, please refer to [faster-rcnn.pytorch](https://github.com/jwyang/faster-rcnn.pytorch).
 
 ## Scripts for train_val, test
+Note that you need to set the argument `DATA_DIR` in opts.py according to the dataset.
+
 For the baseline model:
 ```
 # Train_val:
