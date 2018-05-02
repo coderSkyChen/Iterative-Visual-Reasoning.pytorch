@@ -5,7 +5,7 @@ Codes for **Iterative Visual Reasoning Beyond Convolutions**(CVPR2018)，i've re
 - This is a reimplementation of the system described in the paper according to the author's codes: [endernewton/iter-reason
 ](https://github.com/endernewton/iter-reason).
 - The author [endernewton](https://github.com/endernewton) has published the codes for spatial reasoning, so this codes only contains the baseline model and the spatial reasoning model. Global reasoning with knowledge graph has not been added.
-- I've tried to reimplemente the project strictly according to the author's codes. The `crop_and_resize` function is build on top of the `roi_align` function in [ruotianluo/pytorch-faster-rcnn](https://github.com/ruotianluo/pytorch-faster-rcnn). Also the weight initialization for all the modules is the same as the original codes(normal,xavier).
+- I've tried to reimplemente the project strictly according to the author's codes. The `crop_and_resize` function is build on top of the `roi_align` function in [ruotianluo/pytorch-faster-rcnn](https://github.com/ruotianluo/pytorch-faster-rcnn). Also the weight initialization for all the modules is kept the same as the original codes(normal,xavier).
 - The pretrained backbone models come from pytorch pretrained models, using caffe pretrained models may get better results.
 
 ## Mainly Depencies
