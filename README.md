@@ -68,6 +68,9 @@ CUDA_VISIBLE_DEVICES=0 python test_memory.py --net res50 --cuda True --train_id 
 |Res50-baseline|0.654|0.655|0.380|0.314|
 |Res50-local (training..)|-|-|-|-|
 
+## Todo
+Try to get the scores reported in the paper.
+
 ## References
 ```
 @inproceedings{chen18iterative,
