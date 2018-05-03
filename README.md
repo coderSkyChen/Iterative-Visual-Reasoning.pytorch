@@ -11,6 +11,7 @@ Reimplementation for **Iterative Visual Reasoning Beyond Convolutions**(CVPR2018
 - Feel free to contact me if you encounted any issues.
 ## Mainly Depencies
 - Pytorch-0.3
+- Python 2.7
 - Tensorboard(this is optional)
 - Cython 
 - opencv-python
