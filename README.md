@@ -69,7 +69,8 @@ CUDA_VISIBLE_DEVICES=0 python test_memory.py --net res50 --cuda True --train_id 
 |Res50-local (training..)|-|-|-|-|
 
 ## Todo
-Try to get the scores reported in the paper.
+- Try to get the scores reported in the paper.
+- Try to add the global reasoning module.
 
 ## References
 ```
