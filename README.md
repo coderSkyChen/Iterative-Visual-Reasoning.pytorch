@@ -66,6 +66,16 @@ CUDA_VISIBLE_DEVICES=0 python test_memory.py --net res50 --cuda True --train_id 
 |Res50-baseline|0.654|0.655|0.380|0.314|
 |Res50-local (training..)|-|-|-|-|
 
+## References
+```
+@inproceedings{chen18iterative,
+    author = {Xinlei Chen and Li-Jia Li and Li Fei-Fei and Abhinav Gupta},
+    title = {Iterative Visual Reasoning Beyond Convolutions},
+    booktitle = {Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition},
+    Year = {2018}
+}
+```
+
 ## Demo
 <img src="https://github.com/coderSkyChen/Iterative-Visual-Reasoning.pytorch/raw/master/Images_for_readme/ADE_val_00000127.jpg" height  = "500" alt="3" align=left />
  <img src="https://github.com/coderSkyChen/Iterative-Visual-Reasoning.pytorch/raw/master/Images_for_readme/ADE_val_00000813.jpg" height  = "500" alt="5" align=left />
