@@ -43,6 +43,9 @@ def check_rootfolders(trainid):
 if __name__ == '__main__':
 
     args = parse_args()
+    if args.batch_size != 1:
+        print('The batch size should always be 1 for now.')
+        raise NotImplementedError
     check_rootfolders(args.train_id)
     summary_w = tf and tf.summary.FileWriter(\
         os.path.join('./data/results', args.train_id, args.root_log))  # tensorboard
