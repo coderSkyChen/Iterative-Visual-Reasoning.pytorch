@@ -29,7 +29,7 @@ class BatchLoader(data.Dataset):
         """Set the roidb to be used by this layer during training."""
         self.roidb = roidb
         self.args = args
-        self.is_train = is_training
+        self.is_train_val = is_training
 
     def get_one_sample(self, index):
         num_images = 1
@@ -142,7 +142,10 @@ class BatchLoader(data.Dataset):
         # we need to random shuffle the bounding box.
         data_height, data_width = data.size(1), data.size(2)
 
-        if self.is_train:
+        if self.is_train_val:
+            # if the number of region is greater than 100 then random pick 100 regions
+            # this opt can make the used memory of GPUs more stable.
+            # only for train and val phase
             np.random.shuffle(blobs['gt_boxes'])
             if blobs['gt_boxes'].shape[0] > 100:
                 print('sampling regions from %d to %d' % (blobs['gt_boxes'].shape[0], 100))

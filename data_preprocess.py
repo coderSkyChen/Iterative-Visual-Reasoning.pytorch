@@ -365,12 +365,15 @@ class ADE:
         mins_ap = voc_ap(rec, prec)
         return aps[1:], mcls_ap, mins_ap
 
-    def evaluate(self, all_scores, roidb=None):
+    def evaluate(self, all_scores, roidb=None, clip_region=False):
         if roidb is None:
             roidb = self.roidb
         all_scores = np.vstack(all_scores)
         # all_scores = np.minimum(all_scores, 1.0)
-        self.gt_classes = np.hstack([r['gt_classes'] for r in roidb])
+        if clip_region:
+            self.gt_classes = np.hstack([r['gt_classes'][:100] for r in roidb])
+        else:
+            self.gt_classes = np.hstack([r['gt_classes'] for r in roidb])
 
         scs, mcls_sc, mins_sc, valid = self._score(all_scores)
         acs, mcls_ac, mins_ac = self._accuracy(all_scores)

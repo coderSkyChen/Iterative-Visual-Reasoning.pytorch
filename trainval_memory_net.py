@@ -94,7 +94,7 @@ if __name__ == '__main__':
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size, \
                  num_workers=args.num_workers, shuffle=True)
 
-    dataloader_val = torch.utils.data.DataLoader(BatchLoader(pd_val.roidb, args, is_training=False), batch_size=1, \
+    dataloader_val = torch.utils.data.DataLoader(BatchLoader(pd_val.roidb, args, is_training=True), batch_size=1, \
                                              num_workers=args.num_workers, shuffle=False)
 
     # initilize the tensor holder here.
@@ -172,7 +172,7 @@ if __name__ == '__main__':
 
         data_iter = iter(dataloader)
         for step in range(iters_per_epoch):
-            # if step >= 0:  # just for check test
+            # if step >= 20:  # just for check test
             #     break
 
             if total_iters % (args.lr_decay_step + 1) == 0:
@@ -242,13 +242,13 @@ if __name__ == '__main__':
                 end = time.time()
                 loss_rcnn_cls = cls_loss.data[0]
                 print(
-                    "evaling: [epoch %2d][iter %4d/%4d] ; time cost: %f; total_loss: %.4f" % (
+                    "evaling: [epoch %2d][iter %4d/%4d] ; time cost: %.2f; total_loss: %.2f" % (
                     epoch, step, len(pd_val.roidb), end - start, loss_rcnn_cls))
 
                 start = time.time()
 
         print('Evaluating detections')
-        mcls_sc, mcls_ac, mcls_ap, mins_sc, mins_ac, mins_ap = pd_val.evaluate(all_scores)
+        mcls_sc, mcls_ac, mcls_ap, mins_sc, mins_ac, mins_ap = pd_val.evaluate(all_scores, clip_region=True)
         add_summary_value(summary_w, 'eval_total_loss', loss_tt/len(pd_val.roidb), total_iters)
         add_summary_value(summary_w, 'mcls_sc', mcls_sc, total_iters)
         add_summary_value(summary_w, 'mcls_ac', mcls_ac, total_iters)
