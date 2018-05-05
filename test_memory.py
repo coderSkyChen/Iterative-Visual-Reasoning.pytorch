@@ -63,8 +63,7 @@ if __name__ == '__main__':
     pd_test.filter_roidb()
 
     test_size = len(pd_test.roidb)
-    dataset = BatchLoader(pd_test.roidb, args)
-    dataloader = torch.utils.data.DataLoader(BatchLoader(pd_test.roidb, args), batch_size=1, \
+    dataloader = torch.utils.data.DataLoader(BatchLoader(pd_test.roidb, args, is_training=False), batch_size=1, \
                                              num_workers=args.num_workers, shuffle=False)
 
     # initilize the tensor holder here.
@@ -128,7 +127,7 @@ if __name__ == '__main__':
         gt_boxes.data.resize_(data[2].size()).copy_(data[2])
         memory_size.data.resize_(data[3].size()).copy_(data[3])
 
-        cls_prob, cls_loss = basenet(im_data, im_info, gt_boxes, memory_size)
+        cls_prob, cls_loss, cross_entropy_image, cross_entropy_memory, ce_final = basenet(im_data, im_info, gt_boxes, memory_size)
         all_scores[step] = cls_prob.data.cpu().numpy()
         loss = cls_loss.mean()
         loss_tt += loss.data[0]

@@ -76,7 +76,7 @@ def parse_args():
                         help='train_id is used to identify this training phrase', type=str)
 
     # resume trained model
-    parser.add_argument('--r', dest='resume',
+    parser.add_argument('--resume',
                         help='resume checkpoint or not',
                         default=False, type=bool)
     parser.add_argument('--model_name', type=str, help='modelfile name,relative path for the model file')

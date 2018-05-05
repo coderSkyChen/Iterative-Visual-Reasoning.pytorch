@@ -78,7 +78,7 @@ def compute_target_memory(memory_size, gt_boxes, feat_stride):
     minus_h = memory_size[0] - 1.
     minus_w = memory_size[1] - 1.
 
-    # gt_boxes = gt_boxes.detach()
+    # gt_boxes = gt_boxes.data
     x1 = gt_boxes[:, [0]] / feat_stride
     y1 = gt_boxes[:, [1]] / feat_stride
     x2 = gt_boxes[:, [2]] / feat_stride
@@ -199,11 +199,6 @@ class vgg16(nn.Module):
 
     def _init_modules(self):
         vgg = models.vgg16()
-        if self.pretrained:
-            print("Loading pretrained weights from %s" % (self.model_path))
-            state_dict = torch.load(self.model_path)
-            vgg.load_state_dict({k: v for k, v in state_dict.items() if k in vgg.state_dict()})
-
         vgg.classifier = nn.Sequential(*list(vgg.classifier._modules.values())[:-1])
 
         # not using the last maxpool layer
@@ -395,7 +390,7 @@ class memory_res50(nn.Module):
                                                                                                       inv_rois.size(0),
                                                                                                       1).cuda().int()))
         # Add things up (make sure it is relu)
-        inv_crop = torch.cumsum(inv_crops, dim=0)
+        inv_crop = torch.sum(inv_crops, dim=0)
         return inv_crop, inv_crops
 
     def _init_weights(self):
@@ -411,7 +406,7 @@ class memory_res50(nn.Module):
                 m.bias.data.zero_()
 
         def xavier_init(m):
-            if isinstance(m, nn.Conv2d):
+            if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
                 init.kaiming_normal(m.weight.data)
                 init.constant(m.bias.data, 0.)
 
@@ -432,9 +427,14 @@ class memory_res50(nn.Module):
         normal_init(self._gate_m_update, 0, 0.01)
         normal_init(self._gate_m_input, 0, 0.01)
 
+        # self._fc_iter = nn.DataParallel(self._fc_iter)
+        # self._bottomtop_fc = nn.DataParallel(self._bottomtop_fc)
+        # self._cls_iter = nn.DataParallel(self._cls_iter)
+        # self._cls_init = nn.DataParallel(self._cls_init)
+
 
     def _init_modules(self):
-        resnet = models.resnet50(pretrained=True)
+        resnet = models.resnet50(pretrained=self.pretrained)
 
         self.Conv_base = nn.Sequential(resnet.conv1, resnet.bn1, resnet.relu, resnet.maxpool, resnet.layer1,
                                        resnet.layer2, resnet.layer3)
@@ -511,7 +511,7 @@ class memory_res50(nn.Module):
         cls_prob = F.softmax(cls_score, dim=-1)
 
         self._predictions['cls_score'].append(cls_score)
-        self._predictions['cls_prob'].append(cls_prob)
+        # self._predictions['cls_prob'].append(cls_prob)
 
         return cls_score, cls_prob
 
@@ -582,16 +582,16 @@ class memory_res50(nn.Module):
     def _update_weights(self, labels, cls_prob):
         num_gt = labels.size(0)
         index = torch.LongTensor([i for i in range(num_gt)]).cuda()
-        cls_score = cls_prob[index, labels.data.type_as(index)]
+        cls_score = cls_prob[index, labels.type_as(index)]
         big_ones = cls_score >= 1. - self.args.MEM_BETA
         # Focus on the hard examples
         weights = 1. - cls_score
         weights[big_ones.type_as(index)] = self.args.MEM_BETA
         weights_sum = torch.sum(weights)
-        weights /= torch.max(weights_sum, torch.ones_like(weights_sum).type_as(weights_sum) * (1e-14))
+        weights /= max(weights_sum, 1e-14)
 
         weights = weights.contiguous().view(-1)
-        self._predictions["weights"].append(weights)
+        self._predictions["weights"].append(Variable(weights))
 
     def _aggregate_pred(self):
         comb_confid = torch.stack(self._predictions['confid'], dim=2)
@@ -683,27 +683,32 @@ class memory_res50(nn.Module):
             mem = self._mem_handle(mem, pool5_nb, cls_score, cls_prob, rois, inv_rois, iter)
 
             # if training
-            self._update_weights(self._labels, cls_prob)
-
+            self._update_weights(self._labels.data, cls_prob.data)
+        del mem
         # Need to finalize the class scores, regardless of whether loss is computed
         cls_prob = self._aggregate_pred()
 
-        # if training
+        # if training,loss stuff
         cross_entropy = []
         for iter in range(self.args.MEM_ITER):
-            # RCNN, class loss
             cls_score = self._predictions["cls_score"][iter]
-            ce = F.cross_entropy(cls_score, self._labels)
-            ce = torch.mean(ce)
+            ce_ins = F.cross_entropy(cls_score, self._labels)
+            if iter > 0:
+                weight = self._predictions["weights"][iter-1]
+                ce = torch.sum(weight*ce_ins)
+            else:
+                ce = torch.mean(ce_ins)
             cross_entropy.append(ce)
+
+        ce_final = torch.mean(F.cross_entropy(self._predictions["attend_cls_score"], self._labels))
 
         ce_rest = torch.stack(cross_entropy[1:])
         cross_entropy_image = cross_entropy[0]
         cross_entropy_memory = torch.mean(ce_rest)
-        cross_entropy = cross_entropy_image + 1 * cross_entropy_memory
 
-        loss = cross_entropy
+        total_loss = cross_entropy_image + 1. * cross_entropy_memory + 1. * ce_final
 
         cls_prob = cls_prob.view(rois.size(0), -1)  # *,classnum=2970?
         # print('cls prob', cls_prob.size())
-        return cls_prob, loss
+        del self._predictions
+        return cls_prob, total_loss, cross_entropy_image, cross_entropy_memory, ce_final

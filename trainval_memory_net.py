@@ -86,12 +86,12 @@ if __name__ == '__main__':
     pd_val.filter_roidb()
 
     train_size = len(pd_train.roidb)
-    dataset = BatchLoader(pd_train.roidb, args)
+    dataset = BatchLoader(pd_train.roidb, args, is_training=True)
 
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size, \
                  num_workers=args.num_workers, shuffle=True)
 
-    dataloader_val = torch.utils.data.DataLoader(BatchLoader(pd_val.roidb, args), batch_size=1, \
+    dataloader_val = torch.utils.data.DataLoader(BatchLoader(pd_val.roidb, args, is_training=False), batch_size=1, \
                                              num_workers=args.num_workers, shuffle=False)
 
     # initilize the tensor holder here.
@@ -120,11 +120,7 @@ if __name__ == '__main__':
         args.CUDA = True
 
     # initilize the network here.
-    if args.net == 'vgg16':
-        basenet = vgg16(pd_train.classes, args, pretrained=True)
-    elif args.net == 'res50':
-        basenet = res50(pd_train.classes, args, pretrained=True)
-    elif args.net == 'memory_res50':
+    if args.net == 'memory_res50':
         basenet = memory_res50(pd_train.classes, args, pretrained=True)
     else:
         print("network is not defined")
@@ -173,7 +169,7 @@ if __name__ == '__main__':
 
         data_iter = iter(dataloader)
         for step in range(iters_per_epoch):
-            # if step>=11:  # just for check test
+            # if step >= 0:  # just for check test
             #     break
 
             if total_iters % (args.lr_decay_step + 1) == 0:
@@ -183,6 +179,7 @@ if __name__ == '__main__':
             if total_iters > args.max_iters:
                 break
             total_iters = total_iters + 1
+
             data = next(data_iter)
             im_data.data.resize_(data[0].size()).copy_(data[0])
             im_info.data.resize_(data[1].size()).copy_(data[1])
@@ -190,7 +187,8 @@ if __name__ == '__main__':
             memory_size.data.resize_(data[3].size()).copy_(data[3])
 
             basenet.zero_grad()
-            cls_prob, cls_loss = basenet(im_data, im_info, gt_boxes, memory_size)
+
+            _, cls_loss, cross_entropy_image, cross_entropy_memory, ce_final = basenet(im_data, im_info, gt_boxes, memory_size)
 
             loss = cls_loss.mean()
             # backward
@@ -202,12 +200,19 @@ if __name__ == '__main__':
 
             if step % args.disp_interval == 0:
                 end = time.time()
-                loss_rcnn_cls = cls_loss.data[0]
+                loss_rcnn_cls = cls_loss.mean().data[0]
+                img_loss= cross_entropy_image.mean().data[0]
+                mem_loss = cross_entropy_memory.mean().data[0]
+                attend_loss = ce_final.mean().data[0]
 
                 print(
-                    "[epoch %2d][iter %4d/%4d] lr: %.2e; time cost: %f; rcnn_cls: %.4f" % (epoch, step, iters_per_epoch, lr, end - start, loss_rcnn_cls))
+                    "[epoch %2d][iter %4d/%4d] lr: %.2e,time: %.1f; loss: %.2f img_L: %.2f, mem_L: %.2f, att_L: %.2f"
+                    % (epoch, step, iters_per_epoch, lr, end - start, loss_rcnn_cls, img_loss, mem_loss, attend_loss))
 
-                add_summary_value(summary_w, 'loss', loss_rcnn_cls, total_iters)
+                add_summary_value(summary_w, 'total_loss', loss_rcnn_cls, total_iters)
+                add_summary_value(summary_w, 'image_loss', img_loss, total_iters)
+                add_summary_value(summary_w, 'memory_loss', mem_loss, total_iters)
+                add_summary_value(summary_w, 'attend_loss', attend_loss, total_iters)
                 add_summary_value(summary_w, 'lr', lr, total_iters)
 
                 start = time.time()
@@ -224,7 +229,7 @@ if __name__ == '__main__':
             gt_boxes.data.resize_(data[2].size()).copy_(data[2])
             memory_size.data.resize_(data[3].size()).copy_(data[3])
 
-            cls_prob, cls_loss = basenet(im_data, im_info, gt_boxes, memory_size)
+            cls_prob, cls_loss, cross_entropy_image, cross_entropy_memory, ce_final = basenet(im_data, im_info, gt_boxes, memory_size)
             # print(cls_prob.size())
             all_scores[step] = cls_prob.data.cpu().numpy()
             loss = cls_loss.mean()
@@ -234,14 +239,14 @@ if __name__ == '__main__':
                 end = time.time()
                 loss_rcnn_cls = cls_loss.data[0]
                 print(
-                    "evaling: [epoch %2d][iter %4d/%4d] ; time cost: %f; rcnn_cls: %.4f" % (
+                    "evaling: [epoch %2d][iter %4d/%4d] ; time cost: %f; total_loss: %.4f" % (
                     epoch, step, len(pd_val.roidb), end - start, loss_rcnn_cls))
 
                 start = time.time()
 
         print('Evaluating detections')
         mcls_sc, mcls_ac, mcls_ap, mins_sc, mins_ac, mins_ap = pd_val.evaluate(all_scores)
-        add_summary_value(summary_w, 'eval_loss', loss_tt/len(pd_val.roidb), total_iters)
+        add_summary_value(summary_w, 'eval_total_loss', loss_tt/len(pd_val.roidb), total_iters)
         add_summary_value(summary_w, 'mcls_sc', mcls_sc, total_iters)
         add_summary_value(summary_w, 'mcls_ac', mcls_ac, total_iters)
         add_summary_value(summary_w, 'mcls_ap', mcls_ap, total_iters)

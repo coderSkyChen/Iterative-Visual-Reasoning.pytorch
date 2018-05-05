@@ -63,8 +63,7 @@ if __name__ == '__main__':
     pd_test.filter_roidb()
 
     test_size = len(pd_test.roidb)
-    dataset = BatchLoader(pd_test.roidb, args)
-    dataloader = torch.utils.data.DataLoader(BatchLoader(pd_test.roidb, args), batch_size=1, \
+    dataloader = torch.utils.data.DataLoader(BatchLoader(pd_test.roidb, args, is_training=False), batch_size=1, \
                                              num_workers=args.num_workers, shuffle=False)
 
     # initilize the tensor holder here.

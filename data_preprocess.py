@@ -37,7 +37,7 @@ class ADE:
         self._root_path = osp.join(self.args.DATA_DIR, 'ADE')
         self._name_file = osp.join(self._root_path, 'objectnames.txt')
         self._count_file = osp.join(self._root_path, 'objectcounts.txt')
-        self._anno_file = osp.join(self._root_path, self._image_set + '.txt')  #train.txt
+        self._anno_file = osp.join(self._root_path, self._image_set + '.txt')  #train.txt for image path
         with open(self._anno_file) as fid:
             image_index = fid.readlines()
             self._image_index = [ii.strip() for ii in image_index]

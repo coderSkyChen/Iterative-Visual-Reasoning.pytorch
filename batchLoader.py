@@ -25,10 +25,11 @@ import pdb
 
 
 class BatchLoader(data.Dataset):
-    def __init__(self, roidb, args):
+    def __init__(self, roidb, args, is_training):
         """Set the roidb to be used by this layer during training."""
         self.roidb = roidb
         self.args = args
+        self.is_train = is_training
 
     def get_one_sample(self, index):
         num_images = 1
@@ -141,6 +142,13 @@ class BatchLoader(data.Dataset):
         # we need to random shuffle the bounding box.
         data_height, data_width = data.size(1), data.size(2)
 
+        if self.is_train:
+            np.random.shuffle(blobs['gt_boxes'])
+            if blobs['gt_boxes'].shape[0] > 100:
+                print('sampling regions from %d to %d' % (blobs['gt_boxes'].shape[0], 100))
+                blobs['gt_boxes'] = blobs['gt_boxes'][:100]
+        else:
+            pass
         gt_boxes = torch.from_numpy(blobs['gt_boxes'])
         # permute trim_data to adapt to downstream processing
         data = data.permute(0, 3, 1, 2).contiguous().view(3, data_height, data_width)
