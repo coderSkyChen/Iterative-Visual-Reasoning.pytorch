@@ -63,15 +63,17 @@ CUDA_VISIBLE_DEVICES=0 python test_memory.py --net memory_res50 --cuda True --tr
 ```
 
 ## Benchmarking
+Use pytorch pretrained model.
 |model|per-instance AP|per-instance AC|per-class AP|per-class AC|
 |--------------|:-----:|:-----:|:-----:|:-----:|
 |pytorch-Res50-baseline|0.654|0.655|0.380|0.314|
 |pytorch-Res50-local|0.675|0.675|0.407|0.314|
 
+Use caffe pretrained model.
 |model|per-instance AP|per-instance AC|per-class AP|per-class AC|
 |--------------|:-----:|:-----:|:-----:|:-----:|
-|caffe-Res50-baseline|-|-|-|-|
-|caffe-Res50-local|-|-|-|-|
+|caffe---Res50-baseline|-|-|-|-|
+|caffe---Res50-local|-|-|-|-|
 
 ## Todo
 - Try to get the scores reported in the paper.
