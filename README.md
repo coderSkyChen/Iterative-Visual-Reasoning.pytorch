@@ -58,7 +58,7 @@ For the spatial reasoning model:
 CUDA_VISIBLE_DEVICES=0 python trainval_memory_net.py --net memory_res50 --cuda True --train_id 1.1 --iters 320000 --lr_decay_step 280000 --lr 0.0005
 
 #Test:
-CUDA_VISIBLE_DEVICES=0 python test_memory.py --net res50 --cuda True --train_id 0.1 --model_name your-model-name.pth
+CUDA_VISIBLE_DEVICES=0 python test_memory.py --net memory_res50 --cuda True --train_id 1.1 --model_name your-model-name.pth
 
 ```
 
