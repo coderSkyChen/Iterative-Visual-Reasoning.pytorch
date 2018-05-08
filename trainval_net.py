@@ -224,7 +224,7 @@ if __name__ == '__main__':
                 start = time.time()
 
         print('Evaluating detections')
-        mcls_sc, mcls_ac, mcls_ap, mins_sc, mins_ac, mins_ap = pd_val.evaluate(all_scores)
+        mcls_sc, mcls_ac, mcls_ap, mins_sc, mins_ac, mins_ap = pd_val.evaluate(all_scores, clip_region=True)
         add_summary_value(summary_w, 'eval_loss', loss_tt/len(pd_val.roidb), total_iters)
         add_summary_value(summary_w, 'mcls_sc', mcls_sc, total_iters)
         add_summary_value(summary_w, 'mcls_ac', mcls_ac, total_iters)
