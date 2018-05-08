@@ -70,7 +70,7 @@ Use pytorch pretrained model.
 |pytorch-Res50-baseline|0.654|0.655|0.380|0.314|
 |pytorch-Res50-local|0.675|0.675|0.407|0.314|
 
-Use caffe pretrained model.
+Use caffe pretrained [model](https://github.com/ruotianluo/pytorch-resnet).
 
 |model|per-instance AP|per-instance AC|per-class AP|per-class AC|
 |--------------|:-----:|:-----:|:-----:|:-----:|
