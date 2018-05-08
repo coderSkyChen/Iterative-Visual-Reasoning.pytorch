@@ -20,7 +20,8 @@ except ImportError:
 import json
 import cv2
 import numpy as np
-
+import nltk
+from nltk.corpus import wordnet as wn
 
 class ADE:
     def __init__(self, image_set, args, count=5):
@@ -102,6 +103,15 @@ class ADE:
     @property
     def minibatch(self):
         return self._minibatch
+
+    def adjacency_matrix_between_classes(self):
+        # 5 types
+        self.adj_classes = np.array([5, len(self.classes), len(self.classes)], dtype=np.float32)
+
+        # is part of
+
+
+        pass
 
     def _load_text(self, text_path):
         class_keys = {}

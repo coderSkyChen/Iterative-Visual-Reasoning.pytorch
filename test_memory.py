@@ -99,6 +99,8 @@ if __name__ == '__main__':
         basenet = vgg16(pd_test.classes, args, pretrained=True)
     elif args.net == 'res50':
         basenet = res50(pd_test.classes, args, pretrained=True)
+    elif args.net == 'memory_res50':
+        basenet = memory_res50(pd_test.classes, args, pretrained=True)
     else:
         print("network is not defined")
 
