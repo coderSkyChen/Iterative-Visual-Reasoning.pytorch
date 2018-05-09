@@ -68,14 +68,16 @@ Use pytorch pretrained model.
 |model|per-instance AP|per-instance AC|per-class AP|per-class AC|
 |--------------|:-----:|:-----:|:-----:|:-----:|
 |pytorch-Res50-baseline|0.654|0.655|0.380|0.314|
-|pytorch-Res50-local|0.675|0.675|0.407|0.314|
+|pytorch-Res50-local-iter=2|0.675|0.675|0.407|0.314|
+|pytorch-Res50-local-iter=3|-|-|-|-|
 
 Use caffe pretrained [model](https://github.com/ruotianluo/pytorch-resnet).
 
 |model|per-instance AP|per-instance AC|per-class AP|per-class AC|
 |--------------|:-----:|:-----:|:-----:|:-----:|
 |caffe---Res50-baseline|-|-|-|-|
-|caffe---Res50-local|-|-|-|-|
+|caffe---Res50-local-iter=2|-|-|-|-|
+|caffe---Res50-local-iter=3|-|-|-|-|
 
 ## Todo
 - Try to get the scores reported in the paper.
