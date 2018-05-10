@@ -6,7 +6,7 @@ Reimplementation for **Iterative Visual Reasoning Beyond Convolutions**(CVPR2018
 ](https://github.com/endernewton/iter-reason).
 - The author [endernewton](https://github.com/endernewton) has published the codes for spatial reasoning, so this codes only contain the baseline model and the spatial reasoning model. Global reasoning with knowledge graph has not been added.
 - I've tried to reimplemente the project strictly according to the author's codes. The `crop_and_resize` function is build on top of the `roi_align` function in [ruotianluo/pytorch-faster-rcnn](https://github.com/ruotianluo/pytorch-faster-rcnn). Also the weight initialization for all the modules is kept the same as the original codes(normal,xavier).
-- The pretrained backbone models come from pytorch pretrained models, using caffe pretrained models may get better results.
+- The pretrained backbone models come from pytorch pretrained models, using caffe pretrained models **may** get better results.
 - For now, the result of this reimplementation is lower than that reported in the paper by 2%~3%. If you are seeking to reproduce the results in the original paper, please use the [official code](https://github.com/endernewton/iter-reason) based on tensorflow.
 - Feel free to contact me if you encounted any issues.
 ## Mainly Depencies
@@ -65,23 +65,20 @@ CUDA_VISIBLE_DEVICES=0 python test_memory.py --net memory_res50 --cuda True --tr
 ## Benchmarking
 Use pytorch pretrained model.
 
-|model|per-instance AP|per-instance AC|per-class AP|per-class AC|
-|--------------|:-----:|:-----:|:-----:|:-----:|
-|pytorch-Res50-baseline|0.654|0.655|0.380|0.314|
-|pytorch-Res50-local-iter=2|0.675|0.675|0.407|0.314|
-|pytorch-Res50-local-iter=3|-|-|-|-|
+|model|per-instance AP|per-instance AC|per-class AP|per-class AC|lr decay at(step)|iterations(step)|
+|--------------|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
+|pytorch-Res50-baseline|0.654|0.655|0.380|0.314|280k|320k|
+|pytorch-Res50-local-iter=2|0.675|0.675|0.407|0.314|280k|320k|
+|pytorch-Res50-local-iter=3|-|-|-|-|-|-|
 
 Use caffe pretrained [model](https://github.com/ruotianluo/pytorch-resnet).
 
-|model|per-instance AP|per-instance AC|per-class AP|per-class AC|
-|--------------|:-----:|:-----:|:-----:|:-----:|
-|caffe---Res50-baseline|-|-|-|-|
-|caffe---Res50-local-iter=2|-|-|-|-|
-|caffe---Res50-local-iter=3|-|-|-|-|
+|model|per-instance AP|per-instance AC|per-class AP|per-class AC|lr decay at(step)|iterations(step)|
+|--------------|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
+|caffe---Res50-baseline|0.648|0.648|0.381|0.326|280k|320K|
 
 ## Todo
 - Try to get the scores reported in the paper.
-- Use caffe pretrained model.
 - Try to add the global reasoning module.
 
 ## References
