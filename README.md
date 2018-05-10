@@ -66,7 +66,7 @@ CUDA_VISIBLE_DEVICES=0 python test_memory.py --net memory_res50 --cuda True --tr
 Use pytorch pretrained model.
 
 |model|per-instance AP|per-instance AC|per-class AP|per-class AC|lr decay at(step)|iters(step)|
-|--------------|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
+|---------------|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
 |Res50-baseline|0.654|0.655|0.380|0.314|280k|320k|
 |local-iter=2|0.675|0.675|0.407|0.314|280k|320k|
 |local-iter=3|-|-|-|-|-|-|
@@ -74,7 +74,7 @@ Use pytorch pretrained model.
 Use caffe pretrained [model](https://github.com/ruotianluo/pytorch-resnet).
 
 |model|per-instance AP|per-instance AC|per-class AP|per-class AC|lr decay at(step)|iters(step)|
-|--------------|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
+|---------------|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
 |Res50-baseline|0.648|0.648|0.381|0.326|280k|320K|
 
 ## Todo
