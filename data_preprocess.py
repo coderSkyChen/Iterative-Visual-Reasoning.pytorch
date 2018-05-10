@@ -33,6 +33,8 @@ class ADE:
         # imdb.__init__(self, 'ade_%s_%d' % (image_set, count))
         self.args = args
         self.cache_path = osp.join(self.args.DATA_DIR, 'cache')
+        if not os.path.exists(self.cache_path):
+            os.makedirs(self.cache_path)
         self._name = 'ade_%s_%d' % (image_set, count)
         self._image_set = image_set
         self._root_path = osp.join(self.args.DATA_DIR, 'ADE')
