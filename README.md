@@ -67,7 +67,7 @@ Use pytorch pretrained model.Backbone is ResNet-50.
 
 |model|per-instance AP|per-instance AC|per-class AP|per-class AC|lr decay at(step)|iters(step)|
 |---------------|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
-|baseline|0.654|0.655|0.380|0.314|280k|320k|
+|baseline|0.657|0.657|0.391|0.330|280k|363k|
 |local-iter=2|0.675|0.675|0.407|0.314|280k|320k|
 |local-iter=3|-|-|-|-|-|-|
 
