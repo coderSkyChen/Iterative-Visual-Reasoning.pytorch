@@ -22,7 +22,6 @@ import cv2
 import numpy as np
 import nltk
 from nltk.corpus import wordnet as wn
-
 class ADE:
     def __init__(self, image_set, args, count=5):
         '''
@@ -31,6 +30,7 @@ class ADE:
         :param count: threshold to filter the objects according to their counts 
         '''
         # imdb.__init__(self, 'ade_%s_%d' % (image_set, count))
+        # self.pretrained_wordvec = 'wiki-news-300d-1M-subword.vec'
         self.args = args
         self.cache_path = osp.join(self.args.DATA_DIR, 'cache')
         if not os.path.exists(self.cache_path):
@@ -78,6 +78,8 @@ class ADE:
         for i in range(len(self.image_index)):
             self.roidb[i]['image'] = self.image_path_at(i)
 
+        # self._load_wordvec_and_adjmat_between_class()
+
     @property
     def name(self):
         return self._name
@@ -106,14 +108,96 @@ class ADE:
     def minibatch(self):
         return self._minibatch
 
-    def adjacency_matrix_between_classes(self):
-        # 5 types
-        self.adj_classes = np.array([5, len(self.classes), len(self.classes)], dtype=np.float32)
-
-        # is part of
-
-
-        pass
+    # def adjacency_matrix_between_classes(self):
+    #     # 5 types
+    #     self.adjmat = np.zeros([5, len(self.classes), len(self.classes)], dtype=np.float32)
+    #
+    #     c = 0
+    #     # is part of
+    #     for index, clsname in enumerate(self._classes):
+    #         if index == 0:
+    #             continue
+    #         try:
+    #             syn = wn.synset(clsname + '.n.01')
+    #         except:
+    #             continue
+    #         parts = syn.part_meronyms()
+    #         if len(parts) == 0:
+    #             continue
+    #         parts = [i.lemma_names()[0] for i in parts]
+    #         for part in parts:
+    #             if part in self._class_to_ind.keys():
+    #                 self.adjmat[0, index, self._class_to_ind[part]] = 1.
+    #                 c += 1
+    #     print('%d edges of kind type 0' % c)
+    #
+    #     # is kind of
+    #     c = 0
+    #     for index, clsname in enumerate(self._classes):
+    #         if index == 0:
+    #             continue
+    #         try:
+    #             syn = wn.synset(clsname + '.n.01')
+    #         except:
+    #             continue
+    #         xiaweici = syn.hyponyms()
+    #         if len(xiaweici) == 0:
+    #             continue
+    #         xiaweici = [i.lemma_names()[0] for i in xiaweici]
+    #         for item in xiaweici:
+    #             if item in self._class_to_ind.keys():
+    #                 self.adjmat[1, index, self._class_to_ind[item]] = 1.
+    #                 c += 1
+    #     print('%d edges of kind type 1' % c)
+    #
+    #     # Plural-form
+    #     c = 0
+    #     for index, clsname in enumerate(self._classes):
+    #         if index == 0:
+    #             continue
+    #         fushu = pluralize(clsname)
+    #         danshu = singularize(clsname)
+    #         if fushu in self._class_to_ind.keys():
+    #             self.adjmat[2, index, self._class_to_ind[fushu]] = 1.
+    #             c += 1
+    #         if danshu in self._class_to_ind.keys():
+    #             self.adjmat[2, index, self._class_to_ind[danshu]] = 1.
+    #             c += 1
+    #     print('%d edges of kind type 2' % c)
+    #
+    #     # Horizontal-symmetry
+    #     c = 0
+    #     for index, clsname in enumerate(self._classes):
+    #         if index == 0:
+    #             continue
+    #         sps = clsname.split('_')  # e.g.:left_arm & right_arm
+    #         if len(sps) != 2:
+    #             continue
+    #         if sps[0] == 'left':
+    #             cp = 'right' + '_' + sps[1]
+    #         elif sps[0] == 'right':
+    #             cp = 'left' + '_' + sps[1]
+    #         else:
+    #             continue
+    #
+    #         if cp in self._class_to_ind.keys():
+    #             self.adjmat[3, index, self._class_to_ind[cp]] = 1.
+    #             self.adjmat[3, self._class_to_ind[cp], index] = 1.
+    #             c += 1
+    #     print('%d edges of kind type 3' % c)
+    #
+    #     # Similarity
+    #     c = 0
+    #     for index, clsname in enumerate(self._classes):
+    #         if index == 0:
+    #             continue
+    #         for s in wn.synsets(clsname):
+    #             nn = s.name().split('.')[0]
+    #             if nn in self._class_to_ind.keys():
+    #                 self.adjmat[4, index, self._class_to_ind[nn]] = 1.
+    #                 self.adjmat[4, self._class_to_ind[nn], index] = 1.
+    #                 c += 1
+    #     print('%d edges of kind type 4' % c)
 
     def _load_text(self, text_path):
         class_keys = {}
@@ -212,6 +296,51 @@ class ADE:
 
     def image_path_at(self, i):
         return osp.join(self._root_path, self._image_index[i])
+
+    # def _load_wordvec_and_adjmat_between_class(self):
+    #     wv_file = osp.join(self.cache_path, self.name + '_wordvecs.pkl')
+    #     adjmat_file = osp.join(self.cache_path, self.name + '_adjmat.pkl')
+    #     if osp.exists(wv_file) and osp.exists(adjmat_file):
+    #         with open(wv_file, 'rb') as f:
+    #             self.wv = pickle.load(f)
+    #         print('{} wordvec loaded from {}'.format(self.name, wv_file))
+    #         with open(adjmat_file, 'rb') as f:
+    #             self.adjmat = pickle.load(f)
+    #         print('{} adjmat loaded from {}'.format(self.name, wv_file))
+    #         return
+    #
+    #     self.adjacency_matrix_between_classes()
+    #     with open(adjmat_file, 'wb') as fid:
+    #         pickle.dump(self.adjmat, fid, pickle.HIGHEST_PROTOCOL)
+    #
+    #     print('loading w2v from file')
+    #     fin = open(osp.join(self.cache_path, self.pretrained_wordvec), 'r', encoding='utf-8', newline='\n', errors='ignore')
+    #     n, d = map(int, fin.readline().split())
+    #     data = {}
+    #     for line in fin:
+    #         tokens = line.rstrip().split(' ')
+    #         data[tokens[0]] = map(float, tokens[1:])
+    #
+    #     print('init w2v for classes')
+    #     vec = np.zeros((len(self.classes), d), dtype=np.float32)
+    #     vec[0] = np.random.random((1, d))
+    #     c = 0
+    #     for ind, class_name in enumerate(self.classes[1:]):
+    #         one_arr = np.zeros((1, d), dtype=np.float32)
+    #         names = class_name.split('_')
+    #         for name in names:
+    #             if name in data.keys():
+    #                 one_arr += data[name]
+    #             else:
+    #                 one_arr += np.random.random((1, d))
+    #                 c += 1
+    #         one_arr = one_arr / float(len(names))
+    #         vec[ind+1] = one_arr
+    #     print('%d items are not in vocabulary' % c)
+    #
+    #     with open(wv_file, 'wb') as fid:
+    #         pickle.dump(vec, fid, pickle.HIGHEST_PROTOCOL)
+    #     self.wv = vec
 
     def gt_roidb(self):
         cache_file = osp.join(self.cache_path, self.name + '_gt_roidb.pkl')

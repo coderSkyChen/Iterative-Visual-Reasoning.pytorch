@@ -79,12 +79,12 @@ if __name__ == '__main__':
     pd_val.filter_roidb()
 
     train_size = len(pd_train.roidb)
-    dataset = BatchLoader(pd_train.roidb, args, is_training=True)
+    dataset = BatchLoader(pd_train.roidb, args, phase='train')
 
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size, \
                  num_workers=args.num_workers, shuffle=True)
 
-    dataloader_val = torch.utils.data.DataLoader(BatchLoader(pd_val.roidb, args, is_training=False), batch_size=1, \
+    dataloader_val = torch.utils.data.DataLoader(BatchLoader(pd_val.roidb, args, phase='eval'), batch_size=1, \
                                              num_workers=args.num_workers, shuffle=False)
 
     # initilize the tensor holder here.
@@ -154,6 +154,7 @@ if __name__ == '__main__':
     iters_per_epoch = int(train_size / args.batch_size)
 
     total_iters = 1
+    total_time = 0.
     for epoch in range(args.start_epoch, args.max_epochs):
         # setting to train mode
         basenet.train()
@@ -161,6 +162,8 @@ if __name__ == '__main__':
         start = time.time()
         data_iter = iter(dataloader)
         for step in range(iters_per_epoch):
+            # if step >= 0:  # just for check latter codes
+            #     break
             if total_iters % (args.lr_decay_step + 1) == 0:
                 adjust_learning_rate(optimizer, args.lr_decay_gamma)
                 lr *= args.lr_decay_gamma
@@ -187,6 +190,8 @@ if __name__ == '__main__':
             if step % args.disp_interval == 0:
                 end = time.time()
                 loss_data = cls_loss.data[0]
+
+                total_time += end - start
 
                 print(
                     "[epoch %2d][iter %4d/%4d] lr: %.2e; time cost: %f; rcnn_cls: %.4f" % (epoch, step, iters_per_epoch, lr, end - start, loss_data))
@@ -234,7 +239,7 @@ if __name__ == '__main__':
         add_summary_value(summary_w, 'mins_ap', mins_ap, total_iters)
 
         save_name = os.path.join('./data/results', args.train_id, args.root_model,
-                                 'checkpoint{}_{}_{}.pth'.format(epoch, step, total_iters))
+                                 'checkpoint{}_{}.pth'.format(epoch, total_iters))
         save_checkpoint({
             'train_id': args.train_id,
             'epoch': epoch + 1,
@@ -248,3 +253,9 @@ if __name__ == '__main__':
 
         if total_iters >args.max_iters:
             break
+
+    if args.resume:
+        total_iters -= (args.start_epoch - 1) * iters_per_epoch
+    print('total train time: %.2f s, %.2f h' % (total_time, total_time / 3600.))
+    print('each epoch time: %.2f h' % (total_time / float(total_iters) * iters_per_epoch / 3600.))
+    print('each iter time: %.2f s' % (total_time / float(total_iters)))

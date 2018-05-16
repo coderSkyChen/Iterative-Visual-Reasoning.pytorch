@@ -327,7 +327,13 @@ class res50(nn.Module):
         normal_init(self.Net_cls_score, 0, 0.01, self.args.TRUNCATED)
 
     def _init_modules(self):
-        resnet = models.resnet50(pretrained=True)
+        if self.args.caffe is not None:
+            resnet = models.resnet50(pretrained=False)
+            print("Loading pretrained weights from %s" % self.args.caffe)
+            state_dict = torch.load(self.args.caffe)
+            resnet.load_state_dict({k: v for k, v in state_dict.items() if k in resnet.state_dict()})
+        else:
+            resnet = models.resnet50(pretrained=True)
 
         self.Conv_base = nn.Sequential(resnet.conv1, resnet.bn1, resnet.relu, resnet.maxpool, resnet.layer1,
                                        resnet.layer2, resnet.layer3)
@@ -359,6 +365,9 @@ class res50(nn.Module):
 
 
 class memory_res50(nn.Module):
+    '''
+    Local module
+    '''
     def __init__(self, classes, args, pretrained=False):
         super(memory_res50, self).__init__()
         self.model_path = args.backbone_path
@@ -432,9 +441,14 @@ class memory_res50(nn.Module):
         # self._cls_iter = nn.DataParallel(self._cls_iter)
         # self._cls_init = nn.DataParallel(self._cls_init)
 
-
     def _init_modules(self):
-        resnet = models.resnet50(pretrained=self.pretrained)
+        if self.args.caffe is not None:
+            resnet = models.resnet50(pretrained=False)
+            print("Loading pretrained weights from %s" % self.args.caffe)
+            state_dict = torch.load(self.args.caffe)
+            resnet.load_state_dict({k: v for k, v in state_dict.items() if k in resnet.state_dict()})
+        else:
+            resnet = models.resnet50(pretrained=True)
 
         self.Conv_base = nn.Sequential(resnet.conv1, resnet.bn1, resnet.relu, resnet.maxpool, resnet.layer1,
                                        resnet.layer2, resnet.layer3)
@@ -473,6 +487,7 @@ class memory_res50(nn.Module):
             nn.ReLU()
         )
         self._cls_iter = nn.Linear(4096, self.n_classes)
+        self._confidence_cls = nn.Linear(1024, 1)
         self._confidence_iter = nn.Linear(4096, 1)
         self._bottomtop_fc = nn.Linear(self.n_classes, 512)
         self._bottomtop_conv = nn.Conv2d(1024, 512, (1, 1))
@@ -515,7 +530,7 @@ class memory_res50(nn.Module):
 
         return cls_score, cls_prob
 
-    def _mem_pred(self, mem, cls_score_conv, rois, iter):
+    def _mem_pred(self, mem, pool5, cls_score_conv, rois, iter):
         '''
         Use memory to predict the output
         :return: 
@@ -524,7 +539,10 @@ class memory_res50(nn.Module):
         mem_ct_pool5 = self._crop_rois(mem_net, rois)  # n*512*7*7
         mem_fc7 = self._fc_iter(mem_ct_pool5.view(mem_ct_pool5.size(0), -1))
         cls_score_mem = self._cls_iter(mem_fc7)
-        self._predictions['confid'].append(self._confidence_iter(mem_fc7))
+        if iter == 0:
+            self._predictions['confid'].append(self._confidence_cls(pool5.mean(3).mean(2)))
+        else:
+            self._predictions['confid'].append(self._confidence_iter(mem_fc7))
         cls_score, cls_prob = self._comb_conv_mem(cls_score_conv, cls_score_mem, iter)
         return cls_score, cls_prob
 
@@ -598,10 +616,6 @@ class memory_res50(nn.Module):
         comb_attend = F.softmax(comb_confid, dim=2)
         self._predictions['confid_prob'] = [comb_attend[:, :, i] for i in range(comb_attend.size(2))]
         comb_score = Variable(torch.stack(self._predictions["cls_score"], dim=2).data)
-        # print('comb score', comb_score.size())
-        # print('comb attend', comb_attend.size())
-        # tt = comb_score*comb_attend
-        # print('comb multiply', tt.size())
 
         cls_score = torch.sum(comb_score * comb_attend, dim=2)
         # print('cls score', cls_score.size())
@@ -672,9 +686,9 @@ class memory_res50(nn.Module):
             self._labels = None
 
         for iter in range(self.args.MEM_ITER):
-            # print('ITERATION: %02d' % iter)
+            print('ITERATION: %02d' % iter)
             # Use memory to predict the output
-            cls_score, cls_prob = self._mem_pred(mem, cls_score_conv, rois, iter)
+            cls_score, cls_prob = self._mem_pred(mem, pool5_nb, cls_score_conv, rois, iter)
 
             if iter == self.args.MEM_ITER - 1:
                 break

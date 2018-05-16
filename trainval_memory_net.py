@@ -164,6 +164,9 @@ if __name__ == '__main__':
     iters_per_epoch = int(train_size / args.batch_size)
 
     total_iters = 1
+    total_time = 0.
+    if args.resume:
+        total_iters = (args.start_epoch-1) * iters_per_epoch
     for epoch in range(args.start_epoch, args.max_epochs):
         # setting to train mode
         basenet.train()
@@ -207,6 +210,8 @@ if __name__ == '__main__':
                 img_loss= cross_entropy_image.mean().data[0]
                 mem_loss = cross_entropy_memory.mean().data[0]
                 attend_loss = ce_final.mean().data[0]
+
+                total_time = total_time + end - start
 
                 print(
                     "[epoch %2d][iter %4d/%4d] lr: %.2e,time: %.1f; loss: %.2f img_L: %.2f, mem_L: %.2f, att_L: %.2f"
@@ -258,7 +263,7 @@ if __name__ == '__main__':
         add_summary_value(summary_w, 'mins_ap', mins_ap, total_iters)
 
         save_name = os.path.join('./data/results', args.train_id, args.root_model,
-                                 'checkpoint_{}_{}_{}.pth'.format(epoch, step, total_iters))
+                                 'checkpoint_{}_{}.pth'.format(epoch, total_iters))
         save_checkpoint({
             'train_id': args.train_id,
             'epoch': epoch + 1,
@@ -272,3 +277,9 @@ if __name__ == '__main__':
 
         if total_iters >args.max_iters:
             break
+
+    if args.resume:
+        total_iters -= (args.start_epoch - 1) * iters_per_epoch
+    print('total train time: %.2f s, %.2f h' % (total_time, total_time / 3600.))
+    print('each epoch time: %.2f h' % (total_time / float(total_iters) * iters_per_epoch / 3600.))
+    print('each iter time: %.2f s' % (total_time / float(total_iters)))

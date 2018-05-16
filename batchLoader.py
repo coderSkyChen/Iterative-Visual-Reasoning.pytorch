@@ -24,6 +24,21 @@ import time
 import pdb
 
 
+def bbox_overlap(boxe, query_boxe):
+    box_area = ((query_boxe[2] - query_boxe[0] + 1) * (query_boxe[3] - query_boxe[1] + 1))
+    overlaps = 0.
+    iw = (min(boxe[2], query_boxe[2]) - max(boxe[0], query_boxe[0]) + 1)
+    if iw > 0:
+        ih = (min(boxe[3], query_boxe[3]) - max(boxe[1], query_boxe[1]) + 1)
+        if ih > 0:
+            ia = iw * ih  # overlape area
+            oa = ((boxe[2] - boxe[0] + 1) * (boxe[3] - boxe[1] + 1))
+            ua = float(oa + box_area - ia)
+            overlaps = ia / ua
+            # contains[n, k] = ia / box_area
+    return overlaps
+
+
 class BatchLoader(data.Dataset):
     def __init__(self, roidb, args, phase):
         """Set the roidb to be used by this layer during training."""
@@ -54,10 +69,14 @@ class BatchLoader(data.Dataset):
         blobs['im_info'] = np.array([im_blob.shape[1],
                                      im_blob.shape[2],
                                      im_scales[0]], dtype=np.float32)
-        blobs['memory_size'] = np.ceil(blobs['im_info'][:2] / self.args.BOTTLE_SCALE).astype(np.int32)
+        if self.args.with_global:
+            blobs['memory_size'] = np.ceil(blobs['im_info'][:2] / self.args.BOTTLE_SCALE / 2.).astype(np.int32)  # conv5
+        else:
+            blobs['memory_size'] = np.ceil(blobs['im_info'][:2] / self.args.BOTTLE_SCALE).astype(np.int32)  # conv4
         blobs['num_gt'] = np.int32(gt_boxes.shape[0])
         blobs['img'] = self.roidb[index[0]]['image']
         blobs['index'] = index[0]
+
         return blobs
 
     def get_image_blob(self, index, scale_inds, scales, max_scale):
@@ -72,7 +91,7 @@ class BatchLoader(data.Dataset):
             if self.roidb[index[i]]['flipped']:
                 im = im[:, ::-1, :]
             target_size = scales[scale_inds[i]]
-            im, im_scale = self.prep_im_for_blob_pytorch(im, target_size,
+            im, im_scale = self.prep_im_for_blob(im, target_size,
                                             max_scale)
             im_scales.append(im_scale)
             processed_ims.append(im)
@@ -97,10 +116,17 @@ class BatchLoader(data.Dataset):
 
         return blob
 
-    def prep_im_for_blob_caffe(self, im, pixel_means, target_size, max_size):
+    def prep_im_for_blob(self, im, target_size, max_size):
         """Mean subtract and scale an image for use in a blob."""
         im = im.astype(np.float32, copy=False)
-        im -= pixel_means
+        if self.args.caffe is not None:
+            im -= np.array([[[103.939, 116.779, 123.68]]])
+        else:
+            im /= 255.  # Convert range to [0,1]
+            im -= np.array([[[0.485, 0.456, 0.406]]])  # Minus mean
+            im /= np.array([[[0.229, 0.224, 0.225]]])  # divide by stddev
+            im = im[:, :, ::-1]  # BGR to RGB
+
         im_shape = im.shape
         im_size_min = np.min(im_shape[0:2])
         im_size_max = np.max(im_shape[0:2])
@@ -113,25 +139,35 @@ class BatchLoader(data.Dataset):
 
         return im, im_scale
 
-    def prep_im_for_blob_pytorch(self, im, target_size, max_size):
-        """Mean subtract and scale an image for use in a blob."""
-        im = im.astype(np.float32, copy=False)
-        im /= 255.  # Convert range to [0,1]
-        im -= np.array([[[0.485, 0.456, 0.406]]])  # Minus mean
-        im /= np.array([[[0.229, 0.224, 0.225]]])  # divide by stddev
-        im = im[:, :, ::-1]  # BGR to RGB
-
-        im_shape = im.shape
-        im_size_min = np.min(im_shape[0:2])
-        im_size_max = np.max(im_shape[0:2])
-        im_scale = float(target_size) / float(im_size_min)
-        # Prevent the biggest axis from being more than MAX_SIZE
-        if np.round(im_scale * im_size_max) > max_size:
-            im_scale = float(max_size) / float(im_size_max)
-        im = cv2.resize(im, None, None, fx=im_scale, fy=im_scale,
-                        interpolation=cv2.INTER_LINEAR)
-
-        return im, im_scale
+    # def _get_adjmat_Arr(self, gtboxes):
+    #     Arr = np.ones((5, gtboxes.shape[0], gtboxes.shape[0]), dtype=np.float32)  # five types between regions : top bottom left right IOU
+    #     Arr = Arr * 1e-14
+    #     for i in range(gtboxes.shape[0]):   # top/bottom
+    #         for j in range(gtboxes.shape[0]):
+    #             if j >= i:
+    #                 break
+    #             if gtboxes[i][1] > gtboxes[j][1]:
+    #                 Arr[0, i, j] = 1.  # top
+    #                 Arr[1, j, i] = 1.  # bottom
+    #
+    #             if gtboxes[i][0] < gtboxes[j][0]:
+    #                 Arr[2, i, j] = 1.  # left
+    #                 Arr[3, j, i] = 1.  # right
+    #
+    #             iou = bbox_overlap(gtboxes[i], gtboxes[j])
+    #             if iou != 0.:
+    #                 Arr[4, i, j] = iou  # left
+    #                 Arr[4, j, i] = iou  # right
+    #
+    #     sums = np.sum(Arr, axis=-1)  # [5, gts]
+    #
+    #     # normalize each row so that them sum to 1
+    #     for n in range(5):
+    #         for i in range(gtboxes.shape[0]):
+    #             Arr[n, i, :] = Arr[n, i, :] / sums[n, i]
+    #
+    #     print('Arr mat sum:', Arr.sum(axis=-1))
+    #     return Arr
 
     def __getitem__(self, index):
         indexes = [index]
@@ -157,6 +193,13 @@ class BatchLoader(data.Dataset):
                 blobs['gt_boxes'] = blobs['gt_boxes'][:100]
         else:
             pass
+
+        # if self.args.with_global:
+        #     Arr_ = self._get_adjmat_Arr(blobs['gt_boxes'])  # 5*r*r
+        #     Arr = torch.from_numpy(Arr_)
+        # else:
+        #     Arr = 0.
+
         gt_boxes = torch.from_numpy(blobs['gt_boxes'])
         # permute trim_data to adapt to downstream processing
         data = data.permute(0, 3, 1, 2).contiguous().view(3, data_height, data_width)

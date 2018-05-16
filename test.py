@@ -114,7 +114,7 @@ if __name__ == '__main__':
     iters_per_epoch = int(test_size / args.batch_size)
 
     total_iters = 1
-
+    total_time = 0.
     # eval model every epoch
     data_iter_val = iter(dataloader)
     basenet.eval()
@@ -142,6 +142,9 @@ if __name__ == '__main__':
 
         if step % args.disp_interval == 0:
             end = time.time()
+
+            total_time += end - start
+
             loss_rcnn_cls = cls_loss.data[0]
             sys.stdout.write(
                 "evaling: [iter %4d/%4d] ; time cost: %f; rcnn_cls: %.4f\r" % (
@@ -160,3 +163,5 @@ if __name__ == '__main__':
     with open(eval_file, 'w') as f:
         f.write('{:.3f} {:.3f} {:.3f} {:.3f}'.format(mins_ap, mins_ac, mcls_ap, mcls_ac))
 
+    print('total time: %.2f s, %.2f h' % (total_time, total_time / 3600.))
+    print('each iter time: %.2f s' % (total_time / float(len(pd_test.roidb))))

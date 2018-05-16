@@ -166,10 +166,13 @@ def draw_predicted_boxes_attend(image, scores, gt_boxes, attend, weight=None):
 def draw_predicted_boxes_test(image, scores, gt_boxes, args):
     # print('image shape', image[0].shape)
     image = image[0]
-    image = image[:, :, ::-1]  # RGB to BGR
-    image *= np.array([[[0.229, 0.224, 0.225]]])  # divide by stddev
-    image += np.array([[[0.485, 0.456, 0.406]]])  # Minus mean
-    image *= 255.  # Convert range to [0,1]
+    if args.caffe is not None:
+        image += np.array([[[103.939, 116.779, 123.68]]])
+    else:
+        image = image[:, :, ::-1]  # RGB to BGR
+        image *= np.array([[[0.229, 0.224, 0.225]]])  # multiply by stddev
+        image += np.array([[[0.485, 0.456, 0.406]]])  # plus mean
+        image *= 255.  # Convert range to [0,255]
 
     disp_image = Image.fromarray(np.uint8(image))
     num_boxes = gt_boxes.shape[0]

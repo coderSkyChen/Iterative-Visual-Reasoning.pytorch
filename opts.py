@@ -18,6 +18,11 @@ def parse_args():
     parser.add_argument('--image_dir', dest='image_dir',
                         help='directory to load images for demo',
                         default="images")
+    parser.add_argument('--caffe', help='use caffe pretrained model, path of model',
+                        type=str, default=None)
+    # parser.add_argument('--with_global', help='whether use the global module',
+    #                     type=bool, default=False)
+    parser.add_argument('--MEM_ITER', help='num of iter', type=int, default=2)
     parser.add_argument('--dataset', dest='dataset',
                         help='training dataset',
                         default='ade', type=str)
@@ -52,7 +57,7 @@ def parse_args():
 
     parser.add_argument('--mGPUs', default=False, type=bool)
     parser.add_argument('--bs', dest='batch_size',
-                        help='batch_size',
+                        help='batch_size should always be 1',
                         default=1, type=int)
 
     # config optimization
@@ -80,18 +85,8 @@ def parse_args():
                         help='resume checkpoint or not',
                         default=False, type=bool)
     parser.add_argument('--model_name', type=str, help='modelfile name,relative path for the model file')
-    parser.add_argument('--checksession', dest='checksession',
-                        help='checksession to load model',
-                        default=1, type=int)
-    parser.add_argument('--checkepoch', dest='checkepoch',
-                        help='checkepoch to load model',
-                        default=1, type=int)
-    parser.add_argument('--checkpoint', dest='checkpoint',
-                        help='checkpoint to load model',
-                        default=0, type=int)
-    parser.add_argument('--vis', default=False, type=bool)
 
-    parser.add_argument('--backbone_path', default='data/pretrained_model/vgg16_caffe.pth')
+    parser.add_argument('--vis', default=False, type=bool)
 
     args = parser.parse_args()
 
@@ -108,7 +103,7 @@ def parse_args():
     args.FEAT_STRIDE = [16, ]
 
     args.MEM_C = 512
-    args.MEM_ITER = 2
+    # args.MEM_ITER = 2
     args.MEM_FC_L = 2
     args.MEM_IN_CONV = 3
     args.MEM_BETA = 0.5
