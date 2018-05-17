@@ -69,7 +69,7 @@ Use pytorch pretrained model.Backbone is ResNet-50.
 |---------------|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
 |baseline|0.657|0.657|0.391|0.330|280k|363k|
 |local-iter=2|0.674|0.673|0.407|0.320|280k|363k|
-|local-iter=3|-|-|-|-|-|-|
+|local-iter=3|0.675|0.676|0.411|0.314|280k|363k|
 
 Use caffe pretrained [model](https://github.com/ruotianluo/pytorch-resnet).
 
